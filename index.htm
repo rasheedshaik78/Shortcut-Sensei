@@ -465,12 +465,14 @@
                 <input type="text" id="signup_name" placeholder="Name" required />
                 <input type="email" id="signup_email" placeholder="Email" required />
                 <input type="password" id="signup_password" placeholder="Password" required />
-                <div id="password-validation" style="display: none; text-align: left; margin: 5px 0; font-size: 12px;"></div>
+<div id="password-validation" style="display: none; text-align: left; margin: 5px 0; font-size: 12px;"></div>
+
                 <button type="submit">Sign Up</button>
             </form>
         </div>
         <div class="form-container sign-in-container">
             <form id="loginForm">
+                <p>Please use </p>
                 <h1>Sign in</h1>
                 <div class="social-container">
                     <a href="#" class="social google" id="google-signin"><i class="fab fa-google"></i></a>
@@ -482,10 +484,10 @@
                 <input type="password" id="login_password" placeholder="Password" required />
                 <span class="forgot-password" id="forgotPassword">Forgot your password?</span>
                 <button type="submit">Sign In</button>
-                <div id="verification-section" style="margin-top: 15px;">
-                    <span style="font-size: 12px;">Haven't received verification email?</span>
-                    <button type="button" id="resendVerificationBtn" style="font-size: 12px; background: none; border: none; color: #FF416C; text-decoration: underline; cursor: pointer; padding: 0;">Resend</button>
-                </div>
+<div id="verification-section" style="margin-top: 15px;">
+    <span style="font-size: 12px;">Haven't received verification email?</span>
+    <button type="button" id="resendVerificationBtn" style="font-size: 12px; background: none; border: none; color: #FF416C; text-decoration: underline; cursor: pointer; padding: 0;">Resend</button>
+</div>
             </form>
         </div>
         <div class="overlay-container">
@@ -521,292 +523,244 @@
         <p>© 2025 Shortcut Sensei - All Rights Reserved</p>
     </footer>
 
-    
-        <script type="module">
-    // Firebase imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { 
-        getAuth, 
-        createUserWithEmailAndPassword,
-        signInWithEmailAndPassword,
-        GoogleAuthProvider,
-        FacebookAuthProvider,
-        OAuthProvider,
-        signInWithPopup,
-        sendPasswordResetEmail,
-        sendEmailVerification,
-        signOut
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { 
-        getDatabase, 
-        ref, 
-        set, 
-        get, 
-        child 
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    <script type="module">
+// Firebase imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    GoogleAuthProvider,
+    FacebookAuthProvider,
+    OAuthProvider,
+    signInWithPopup,
+    sendPasswordResetEmail,
+    signOut
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { 
+    getDatabase, 
+    ref, 
+    set, 
+    get, 
+    child 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // Initialize Firebase with your new config
-    const firebaseConfig = {
-        apiKey: "AIzaSyAAyf90CjArde0EKScU6x7GZOi5xcqNa4Y",
-        authDomain: "shortcut-sensei-4a868.firebaseapp.com",
-        databaseURL: "https://shortcut-sensei-4a868-default-rtdb.firebaseio.com",
-        projectId: "shortcut-sensei-4a868",
-        storageBucket: "shortcut-sensei-4a868.firebasestorage.app",
-        messagingSenderId: "1011740423063",
-        appId: "1:1011740423063:web:7f707d9d0e0e89daa0cad2",
-        measurementId: "G-B3NV541EE0"
+// Initialize Firebase with your config
+const firebaseConfig = {
+    apiKey: "AIzaSyAAyf90CjArde0EKScU6x7GZOi5xcqNa4Y",
+    authDomain: "shortcut-sensei-4a868.firebaseapp.com",
+    databaseURL: "https://shortcut-sensei-4a868-default-rtdb.firebaseio.com",
+    projectId: "shortcut-sensei-4a868",
+    storageBucket: "shortcut-sensei-4a868.firebasestorage.app",
+    messagingSenderId: "1011740423063",
+    appId: "1:1011740423063:web:7f707d9d0e0e89daa0cad2",
+    measurementId: "G-B3NV541EE0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// Auth providers setup
+const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+const linkedinProvider = new OAuthProvider('linkedin.com');
+
+// UI Elements
+const signUpButton = document.getElementById('signUp');
+const signInButton = document.getElementById('signIn');
+const container = document.getElementById('container');
+const forgotPasswordLink = document.getElementById('forgotPassword');
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+const closeModalBtn = document.querySelector('.close');
+const passwordInput = document.getElementById('signup_password');
+const passwordValidationMessage = document.getElementById('password-validation');
+// Removed resendVerificationBtn because verification is removed
+
+// Message handling function
+function showMessage(message, type) {
+    const messageContainer = document.getElementById('messageContainer');
+    messageContainer.textContent = message;
+    messageContainer.className = type; // 'success' or 'error'
+    messageContainer.style.display = 'block';
+
+    // Hide the message automatically after 5 seconds
+    setTimeout(() => {
+        messageContainer.style.display = 'none';
+    }, 5000);
+}
+
+// Save user data to localStorage
+function saveUserData(user) {
+    // Save essential user information to localStorage
+    const userData = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || document.getElementById('signup_name').value || 'User',
+        emailVerified: user.emailVerified,
+        photoURL: user.photoURL || null,
+        lastLogin: Date.now()
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+    localStorage.setItem('shortcutSenseiUser', JSON.stringify(userData));
+}
 
-    // Auth providers setup
-    const googleProvider = new GoogleAuthProvider();
-    const facebookProvider = new FacebookAuthProvider();
-    const linkedinProvider = new OAuthProvider('linkedin.com');
+// Password validation function
+function validatePassword(password) {
+    // Password must be at least 8 characters long and include a number, lowercase letter, uppercase letter, and special character
+    const minLength = password.length >= 8;
+    const hasNumber = /\d/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    // UI Elements
-    const signUpButton = document.getElementById('signUp');
-    const signInButton = document.getElementById('signIn');
-    const container = document.getElementById('container');
-    const forgotPasswordLink = document.getElementById('forgotPassword');
-    const forgotPasswordModal = document.getElementById('forgotPasswordModal');
-    const closeModalBtn = document.querySelector('.close');
-    const passwordInput = document.getElementById('signup_password');
-    const passwordValidationMessage = document.getElementById('password-validation');
-    const resendVerificationBtn = document.getElementById('resendVerificationBtn');
+    return {
+        isValid: minLength && hasNumber && hasLowercase && hasUppercase && hasSpecial,
+        minLength,
+        hasNumber,
+        hasLowercase,
+        hasUppercase,
+        hasSpecial
+    };
+}
 
-    // Message handling function
-    function showMessage(message, type) {
-        const messageContainer = document.getElementById('messageContainer');
-        messageContainer.textContent = message;
-        messageContainer.className = type; // 'success' or 'error'
-        messageContainer.style.display = 'block';
+// Live password validation feedback
+passwordInput.addEventListener('input', () => {
+    const password = passwordInput.value;
+    const validation = validatePassword(password);
 
-        // Hide the message automatically after 5 seconds
-        setTimeout(() => {
-            messageContainer.style.display = 'none';
-        }, 5000);
+    // Update validation message
+    if (!validation.isValid) {
+        let message = 'Password must:';
+        if (!validation.minLength) message += '<br>- Be at least 8 characters long';
+        if (!validation.hasNumber) message += '<br>- Include at least one number';
+        if (!validation.hasLowercase) message += '<br>- Include at least one lowercase letter';
+        if (!validation.hasUppercase) message += '<br>- Include at least one uppercase letter';
+        if (!validation.hasSpecial) message += '<br>- Include at least one special character (!@#$%^&*(),.?":{}|<>)';
+
+        passwordValidationMessage.innerHTML = message;
+        passwordValidationMessage.style.color = '#f44336';
+        passwordValidationMessage.style.display = 'block';
+    } else {
+        passwordValidationMessage.innerHTML = 'Password meets all requirements!';
+        passwordValidationMessage.style.color = '#4caf50';
+        passwordValidationMessage.style.display = 'block';
+    }
+});
+
+// Panel switching animation
+signUpButton.addEventListener('click', () => {
+    container.classList.add("right-panel-active");
+});
+
+signInButton.addEventListener('click', () => {
+    container.classList.remove("right-panel-active");
+});
+
+// Email & Password Registration
+document.getElementById('registrationForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('signup_name').value;
+    const email = document.getElementById('signup_email').value;
+    const password = document.getElementById('signup_password').value;
+
+    // Validate password before submission
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+        showMessage("Password doesn't meet security requirements.", "error");
+        return;
     }
 
-    // Save user data to localStorage
-    function saveUserData(user) {
-        // Save essential user information to localStorage
-        const userData = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName || document.getElementById('signup_name').value || 'User',
-            emailVerified: user.emailVerified,
-            photoURL: user.photoURL || null,
-            lastLogin: Date.now()
-        };
+    // Create user with Firebase Authentication
+    createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
 
-        localStorage.setItem('shortcutSenseiUser', JSON.stringify(userData));
-    }
+            // Store additional user info in Realtime Database
+            return set(ref(db, 'users/' + user.uid), {
+                username: name,
+                email: email,
+                createdAt: Date.now(),
+                emailVerified: user.emailVerified // will be false until verified, but no block
+            }).then(() => user);
+        })
+        .then((user) => {
+            // Save user data to localStorage
+            saveUserData(user);
+            showMessage("Registration successful! You are now logged in.", "success");
+            document.getElementById('registrationForm').reset();
+            container.classList.remove("right-panel-active"); // Switch to sign-in panel (optional, you can stay logged in)
+        })
+        .catch((error) => {
+            console.error("Registration error:", error);
+            showMessage(error.message, "error");
+        });
+});
 
-    // Password validation function
-    function validatePassword(password) {
-        // Password must be at least 8 characters long and include a number, lowercase letter, uppercase letter, and special character
-        const minLength = password.length >= 8;
-        const hasNumber = /\d/.test(password);
-        const hasLowercase = /[a-z]/.test(password);
-        const hasUppercase = /[A-Z]/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+// Email & Password Sign In
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
 
-        return {
-            isValid: minLength && hasNumber && hasLowercase && hasUppercase && hasSpecial,
-            minLength,
-            hasNumber,
-            hasLowercase,
-            hasUppercase,
-            hasSpecial
-        };
-    }
+    const email = document.getElementById('login_email').value;
+    const password = document.getElementById('login_password').value;
 
-    // Live password validation feedback
-    passwordInput.addEventListener('input', () => {
-        const password = passwordInput.value;
-        const validation = validatePassword(password);
+    signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
 
-        // Update validation message
-        if (!validation.isValid) {
-            let message = 'Password must:';
-            if (!validation.minLength) message += '<br>- Be at least 8 characters long';
-            if (!validation.hasNumber) message += '<br>- Include at least one number';
-            if (!validation.hasLowercase) message += '<br>- Include at least one lowercase letter';
-            if (!validation.hasUppercase) message += '<br>- Include at least one uppercase letter';
-            if (!validation.hasSpecial) message += '<br>- Include at least one special character (!@#$%^&*(),.?":{}|<>)';
+            // No email verification check here, allow login immediately
 
-            passwordValidationMessage.innerHTML = message;
-            passwordValidationMessage.style.color = '#f44336';
-            passwordValidationMessage.style.display = 'block';
-        } else {
-            passwordValidationMessage.innerHTML = 'Password meets all requirements!';
-            passwordValidationMessage.style.color = '#4caf50';
-            passwordValidationMessage.style.display = 'block';
-        }
-    });
+            // Save user data before redirecting
+            saveUserData(user);
 
-    // Panel switching animation
-    signUpButton.addEventListener('click', () => {
-        container.classList.add("right-panel-active");
-    });
+            showMessage("Sign in successful! Welcome back.", "success");
 
-    signInButton.addEventListener('click', () => {
-        container.classList.remove("right-panel-active");
-    });
+            // Fixed redirect - ensure it points to the correct page
+            setTimeout(() => {
+                window.location.href = "home-page-after_signup.html";
+            }, 1500);
+        })
+        .catch((error) => {
+            console.error("Login error:", error);
+            showMessage(error.message, "error");
+        });
+});
 
-    // Email & Password Registration
-    document.getElementById('registrationForm').addEventListener('submit', (e) => {
-        e.preventDefault();
+// Remove resend verification email function and button listeners (not needed anymore)
 
-        const name = document.getElementById('signup_name').value;
-        const email = document.getElementById('signup_email').value;
-        const password = document.getElementById('signup_password').value;
+// Forgot password modal
+forgotPasswordLink.addEventListener('click', () => {
+    forgotPasswordModal.style.display = 'block';
+});
 
-        // Validate password before submission
-        const validation = validatePassword(password);
-        if (!validation.isValid) {
-            showMessage("Password doesn't meet security requirements.", "error");
-            return;
-        }
+closeModalBtn.addEventListener('click', () => {
+    forgotPasswordModal.style.display = 'none';
+});
 
-        // Create user with Firebase Authentication
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-
-                // Send email verification
-                return sendEmailVerification(user).then(() => {
-                    // Store additional user info in Realtime Database
-                    return set(ref(db, 'users/' + user.uid), {
-                        username: name,
-                        email: email,
-                        createdAt: Date.now(),
-                        emailVerified: false
-                    });
-                });
-            })
-            .then(() => {
-                // Sign out the user until they verify their email
-                return signOut(auth);
-            })
-            .then(() => {
-                showMessage("Successfully signed up! Please check your email to verify your account before logging in.", "success");
-                document.getElementById('registrationForm').reset();
-                container.classList.remove("right-panel-active"); // Switch to sign-in panel
-            })
-            .catch((error) => {
-                console.error("Registration error:", error);
-                showMessage(error.message, "error");
-            });
-    });
-
-    // Email & Password Sign In
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const email = document.getElementById('login_email').value;
-        const password = document.getElementById('login_password').value;
-
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-
-                // Check if email is verified
-                if (!user.emailVerified) {
-                    // Sign out the user
-                    return signOut(auth).then(() => {
-                        throw new Error("Please verify your email before signing in. Check your inbox.");
-                    });
-                }
-
-                // Save user data before redirecting
-                saveUserData(user);
-
-                showMessage("Sign in successful! Welcome back.", "success");
-
-                // Fixed redirect - ensure it points to the correct page
-                setTimeout(() => {
-                    window.location.href = "home-page-after_signup.html";
-                }, 1500);
-            })
-            .catch((error) => {
-                console.error("Login error:", error);
-                showMessage(error.message, "error");
-            });
-    });
-
-    // Resend verification email function
-    function resendVerificationEmail() {
-        const email = document.getElementById('login_email').value;
-        if (!email) {
-            showMessage("Please enter your email address first", "error");
-            return;
-        }
-
-        // Try to sign in temporarily to get user object
-        signInWithEmailAndPassword(auth, email, document.getElementById('login_password').value)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                return sendEmailVerification(user);
-            })
-            .then(() => {
-                // Sign out after sending verification
-                return signOut(auth);
-            })
-            .then(() => {
-                showMessage("Verification email sent! Please check your inbox.", "success");
-            })
-            .catch((error) => {
-                console.error("Verification email error:", error);
-                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-                    showMessage("Please enter correct email and password to resend verification", "error");
-                } else {
-                    showMessage(error.message, "error");
-                }
-            });
-    }
-
-    // Add resend verification button functionality
-    resendVerificationBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        resendVerificationEmail();
-    });
-
-    // Forgot password modal
-    forgotPasswordLink.addEventListener('click', () => {
-        forgotPasswordModal.style.display = 'block';
-    });
-
-    closeModalBtn.addEventListener('click', () => {
+window.addEventListener('click', (event) => {
+    if (event.target === forgotPasswordModal) {
         forgotPasswordModal.style.display = 'none';
-    });
+    }
+});
 
-    window.addEventListener('click', (event) => {
-        if (event.target === forgotPasswordModal) {
+// Password reset form
+document.getElementById('resetPasswordForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('reset_email').value;
+
+    sendPasswordResetEmail(auth, email)
+        .then(() => {
+            showMessage("Password reset email sent! Check your inbox.", "success");
             forgotPasswordModal.style.display = 'none';
-        }
-    });
-
-    // Password reset form
-    document.getElementById('resetPasswordForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const email = document.getElementById('reset_email').value;
-
-        sendPasswordResetEmail(auth, email)
-            .then(() => {
-                showMessage("Password reset email sent! Check your inbox.", "success");
-                forgotPasswordModal.style.display = 'none';
-                document.getElementById('resetPasswordForm').reset();
-            })
-            .catch((error) => {
-                console.error("Password reset error:", error);
-                showMessage(error.message, "error");
-            });
-    });
+            document.getElementById('resetPasswordForm').reset();
+        })
+        .catch((error) => {
+            console.error("Password reset error:", error);
+            showMessage(error.message, "error");
+        });
+});
 </script>
 
 </body>
